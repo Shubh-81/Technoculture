@@ -66,6 +66,8 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common import NoSuchElementException
 from chromedriver_py import binary_path
 
+import wandb
+
 # ------------------- Selenium Setup ------------------- #
 
 DEFAULT_DRIVER = 'chrome'  # Switch to 'firefox' if you want to use Firefox instead of Chrome
@@ -182,6 +184,7 @@ class Scraper():
         os.makedirs(articles_dir, exist_ok=True)
         self.articles_path = os.path.join(articles_dir, f'{source}.jsonl')
         self.driver = setup_driver(self.pdf_path)
+        self.run = wandb.init(project="my-project")
 
     def save_articles(self, articles, path=None):
         '''
@@ -232,6 +235,8 @@ class Scraper():
 
         print(f"Stage 2: Scraping articles from {self.source}...")
         articles = self.scrape_articles(unique_links)
+
+        self.run.log({"num_articles": len(articles)})
         
         if self.pdfs: 
             print(f"Stage 3: Converting PDFs to text...")
@@ -284,6 +289,7 @@ class AAFPScraper(Scraper):
                            "text": markdownify.markdownify(content_text),
                            "url": link}
                 articles.append(article)
+                wandb.log({"num_articles": len(articles)})
             except:
                 pass
         self.save_articles(articles)
